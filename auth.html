@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <title>Momenest</title>
+  <!--
+    Where a Momenest confirmation link lands after the server has confirmed the
+    account. Until 2026-09-23 the link went straight to momenest://, which a
+    phone's browser often will not open after a redirect — so a tap on
+    "Potvrdit účet" confirmed the account and then appeared to do nothing.
+
+    NOTHING HERE TALKS TO ANY SERVER. The address may carry the sign-in tokens
+    in its #fragment; a fragment never leaves the browser, and the first line
+    of the script removes it from the address bar and from the history. The
+    page only says what happened and offers a way back into the app.
+  -->
+  <style>
+    :root { color-scheme: light dark; --ink: #1d1f1c; --muted: #5b6159; --canvas: #fbfaf6; --line: #e4e1d8; --jade: #1f7a5c; --on-jade: #ffffff; }
+    @media (prefers-color-scheme: dark) { :root { --ink: #ecebe6; --muted: #a9ada5; --canvas: #151714; --line: #2c2f2a; --jade: #3fae86; --on-jade: #0b1014; } }
+    body { margin: 0; background: var(--canvas); color: var(--ink); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 30rem; margin: 0 auto; padding: 3.5rem 1.25rem 4rem; text-align: center; }
+    img { width: 72px; height: 72px; border-radius: 18px; }
+    h1 { font-size: 1.6rem; line-height: 1.25; margin: 1.25rem 0 .5rem; }
+    p { margin: .5rem 0; }
+    .meta { color: var(--muted); font-size: .95rem; }
+    .btn { display: inline-block; margin-top: 1.25rem; padding: .9rem 1.6rem; border-radius: 999px; background: var(--jade); color: var(--on-jade); font-weight: 600; text-decoration: none; }
+    .btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <main>
+    <img src="momenest-mark.png" alt="">
+    <h1 id="title">Účet je potvrzený</h1>
+    <p id="body">Vrať se do Momenestu a přihlas se svým e-mailem a heslem.</p>
+    <p><a id="open" class="btn" href="momenest://">Otevřít Momenest</a></p>
+    <p id="note" class="meta">Když se aplikace neotevře, spusť ji z plochy telefonu.</p>
+  </main>
+  <script>
+    (function () {
+      var hash = new URLSearchParams(location.hash.slice(1));
+      var query = new URLSearchParams(location.search);
+      var failed = hash.get('error') || hash.get('error_code') || query.get('error') || query.get('error_code');
+      var lang = (query.get('lang') || navigator.language || 'cs').slice(0, 2).toLowerCase();
+      if (lang !== 'en' && lang !== 'sk') lang = 'cs';
+
+      // First: the tokens out of the address bar and out of the history.
+      if (window.history && history.replaceState) history.replaceState(null, '', location.pathname + '?lang=' + lang);
+
+      var T = {
+        cs: {
+          ok: ['Účet je potvrzený', 'Vrať se do Momenestu a přihlas se svým e-mailem a heslem.'],
+          bad: ['Odkaz už neplatí', 'Potvrzovací odkaz platí hodinu a jde použít jen jednou. Pokud už jsi účet potvrdil, stačí se v aplikaci přihlásit. Jinak se v aplikaci zaregistruj znovu stejným e-mailem — přijde nový odkaz.'],
+          open: 'Otevřít Momenest',
+          note: 'Když se aplikace neotevře, spusť ji z plochy telefonu.'
+        },
+        sk: {
+          ok: ['Účet je potvrdený', 'Vráť sa do Momenestu a prihlás sa svojím e-mailom a heslom.'],
+          bad: ['Odkaz už neplatí', 'Potvrdzovací odkaz platí hodinu a dá sa použiť len raz. Ak si už účet potvrdil, stačí sa v aplikácii prihlásiť. Inak sa v aplikácii zaregistruj znova rovnakým e-mailom — príde nový odkaz.'],
+          open: 'Otvoriť Momenest',
+          note: 'Keď sa aplikácia neotvorí, spusti ju z plochy telefónu.'
+        },
+        en: {
+          ok: ['Your account is confirmed', 'Go back to Momenest and sign in with your e-mail and password.'],
+          bad: ['This link no longer works', 'A confirmation link works for one hour, and only once. If you have already confirmed the account, just sign in in the app. Otherwise sign up again in the app with the same e-mail — a new link will arrive.'],
+          open: 'Open Momenest',
+          note: 'If the app does not open, start it from your home screen.'
+        }
+      }[lang];
+
+      var copy = failed ? T.bad : T.ok;
+      document.documentElement.lang = lang;
+      document.getElementById('title').textContent = copy[0];
+      document.getElementById('body').textContent = copy[1];
+      document.getElementById('open').textContent = T.open;
+      document.getElementById('note').textContent = T.note;
+      document.title = 'Momenest — ' + copy[0];
+
+      // On Android an intent opens the app from inside a mail app's browser too,
+      // and sends somebody without it to the store instead of to nothing.
+      if (/Android/i.test(navigator.userAgent)) {
+        document.getElementById('open').href =
+          'intent://#Intent;scheme=momenest;package=cz.momenest.chores;' +
+          'S.browser_fallback_url=' + encodeURIComponent('https://play.google.com/store/apps/details?id=cz.momenest.chores') + ';end';
+      }
+    })();
+  </script>
+</body>
+</html>
